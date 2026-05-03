@@ -1,0 +1,1516 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  FOUNDER
+  SUPER_ADMIN
+  BRANCH_ADMIN
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+  PHARMACY
+  LAB_TECHNICIAN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum BloodGroup {
+  A_POS
+  A_NEG
+  B_POS
+  B_NEG
+  AB_POS
+  AB_NEG
+  O_POS
+  O_NEG
+  RH_NULL
+  UNKNOWN
+}
+
+enum AppointmentType {
+  CONSULTATION
+  FOLLOW_UP
+  EMERGENCY
+  PROCEDURE
+  LAB_VISIT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AdmissionType {
+  ELECTIVE
+  EMERGENCY
+  TRANSFER
+}
+
+enum AdmissionStatus {
+  ADMITTED
+  DISCHARGED
+  TRANSFERRED
+  CRITICAL
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  RESERVED
+}
+
+enum WardType {
+  GENERAL
+  PRIVATE
+  ICU
+  NICU
+  EMERGENCY
+  OT
+  HDU
+}
+
+enum LabOrderStatus {
+  ORDERED
+  SAMPLE_COLLECTED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum LabOrderPriority {
+  ROUTINE
+  URGENT
+  STAT
+}
+
+enum PrescriptionStatus {
+  ACTIVE
+  DISPENSED
+  EXPIRED
+  CANCELLED
+}
+
+enum BillStatus {
+  PENDING
+  PARTIAL
+  PAID
+  CANCELLED
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  INSURANCE
+  UPI
+  BANK_TRANSFER
+  ONLINE
+}
+
+enum PaymentStatus {
+  INITIATED
+  PROCESSING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  INITIATED
+  COMPLETED
+  FAILED
+}
+
+enum EmergencyStatus {
+  WAITING
+  BEING_TREATED
+  ADMITTED
+  DISCHARGED
+  REFERRED
+  DECEASED
+}
+
+enum TriageLevel {
+  IMMEDIATE
+  URGENT
+  LESS_URGENT
+  NON_URGENT
+}
+
+enum ArrivalMode {
+  WALK_IN
+  AMBULANCE
+  REFERRED
+}
+
+enum BloodRequestPriority {
+  ROUTINE
+  URGENT
+  EMERGENCY
+}
+
+enum BloodRequestStatus {
+  PENDING
+  APPROVED
+  ISSUED
+  CANCELLED
+}
+
+enum AmbulanceStatus {
+  AVAILABLE
+  DISPATCHED
+  ON_SCENE
+  TRANSPORTING
+  RETURNING
+  MAINTENANCE
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+  CUSTOM
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum AllergenSeverity {
+  LOW
+  HIGH
+  CRITICAL
+}
+
+enum QueueStatus {
+  WAITING
+  IN_CONSULTATION
+  COMPLETED
+  SKIPPED
+  CANCELLED
+}
+
+enum QueuePriority {
+  NORMAL
+  EMERGENCY
+  VIP
+}
+
+enum ReferralType {
+  INTERNAL
+  EXTERNAL
+}
+
+enum ReferralUrgency {
+  ROUTINE
+  URGENT
+  EMERGENCY
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum ConditionAtDischarge {
+  STABLE
+  CRITICAL
+  RECOVERED
+  DECEASED
+  TRANSFERRED
+}
+
+enum InsuranceClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PARTIAL
+}
+
+enum DocumentTag {
+  REPORT
+  SCAN
+  ID
+  PRESCRIPTION
+  CONSENT
+  OTHER
+}
+
+enum ItemType {
+  MEDICINE
+  CONSUMABLE
+  EQUIPMENT
+  SURGICAL
+}
+
+enum RadiologyModality {
+  XRAY
+  MRI
+  CT_SCAN
+  ULTRASOUND
+  MAMMOGRAPHY
+  PET_SCAN
+  FLUOROSCOPY
+  ECHOCARDIOGRAPHY
+}
+
+enum PrivacyLevel {
+  NORMAL
+  RESTRICTED
+  HIGHLY_CONFIDENTIAL
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MULTI-TENANCY: Hospital & Branch
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Hospital {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  logo_url    String?
+  website     String?
+  tax_id      String?
+  phone       String
+  email       String   @unique
+  address     Json
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  branches     Branch[]
+  subscription Subscription?
+  settings     HospitalSettings?
+
+  @@map("hospitals")
+}
+
+model Branch {
+  id          String   @id @default(cuid())
+  hospital_id String
+  name        String
+  code        String
+  type        String   @default("branch")
+  phone       String
+  email       String?
+  address     Json
+  timing      Json?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  hospital        Hospital          @relation(fields: [hospital_id], references: [id], onDelete: Cascade)
+  users           User[]
+  patients        Patient[]
+  departments     Department[]
+  wards           Ward[]
+  medicines       Medicine[]
+  ambulances      Ambulance[]
+  blood_inventory BloodInventory[]
+  audit_logs      AuditLog[]
+  patient_queues  PatientQueue[]
+
+  @@unique([hospital_id, code])
+  @@map("branches")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USERS & AUTH
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(cuid())
+  branch_id       String?
+  role_id         String?
+  first_name      String
+  middle_name     String?
+  last_name       String
+  email           String    @unique
+  password        String
+  phone           String?
+  avatar_url      String?
+  specialization  String?
+  role            UserRole
+  is_active       Boolean   @default(true)
+  last_login      DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  branch         Branch?        @relation(fields: [branch_id], references: [id])
+  role_ref       Role?          @relation(fields: [role_id], references: [id])
+  doctor         Doctor?
+  staff          Staff?
+  refresh_tokens RefreshToken[]
+  audit_logs     AuditLog[]
+  notifications  Notification[]
+  doctor_shifts  DoctorShift[]
+  documents_uploaded DocumentUpload[]
+  referring_referrals Referral[]  @relation("ReferringDoctor")
+  target_referrals    Referral[]  @relation("TargetDoctor")
+
+  @@map("users")
+}
+
+model Role {
+  id              String  @id @default(cuid())
+  role_name       String  @unique
+  permission_json Json
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  users User[]
+
+  @@map("roles")
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  user_id    String
+  token      String    @unique
+  expires_at DateTime
+  created_at DateTime  @default(now())
+  revoked_at DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model PatientAuth {
+  id           String    @id @default(cuid())
+  patient_id   String    @unique
+  phone        String    @unique
+  otp          String?
+  otp_expires  DateTime?
+  is_verified  Boolean   @default(false)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  patient        Patient                @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  refresh_tokens PatientRefreshToken[]
+
+  @@map("patient_auth")
+}
+
+model PatientRefreshToken {
+  id              String    @id @default(cuid())
+  patient_auth_id String
+  token           String    @unique
+  expires_at      DateTime
+  created_at      DateTime  @default(now())
+  revoked_at      DateTime?
+
+  patient_auth PatientAuth @relation(fields: [patient_auth_id], references: [id], onDelete: Cascade)
+
+  @@map("patient_refresh_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCTOR AVAILABILITY & SHIFTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DoctorShift {
+  id                    String      @id @default(cuid())
+  user_id               String
+  shift_date            DateTime?   @db.Date
+  start_time            String
+  end_time              String
+  day_of_week           DayOfWeek?
+  slot_duration_minutes Int         @default(15)
+  is_active             Boolean     @default(true)
+  created_at            DateTime    @default(now())
+  updated_at            DateTime    @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("doctor_shifts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CORE DOMAIN: Patients
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Patient {
+  id                String     @id @default(cuid())
+  branch_id         String
+  uhid              String     @unique
+  full_name         String?
+  first_name        String
+  last_name         String
+  dob               DateTime?
+  age               Int?
+  gender            Gender
+  blood_group       BloodGroup @default(UNKNOWN)
+  phone             String
+  email             String?
+  address           Json?
+  emergency_contact Json?
+  insurance_id      String?
+  is_active         Boolean    @default(true)
+  registered_at     DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+
+  branch       Branch       @relation(fields: [branch_id], references: [id])
+  patient_auth PatientAuth?
+
+  appointments     Appointment[]
+  medical_records  MedicalRecord[]
+  admissions       Admission[]
+  bills            Bill[]
+  lab_orders       LabOrder[]
+  emergency_cases  EmergencyCase[]
+  blood_requests   BloodRequest[]
+  family_members   FamilyMember[]   @relation("FamilyHead")
+  family_of        FamilyMember[]   @relation("FamilyMember")
+  notifications    Notification[]
+  medical_histories MedicalHistory[]
+  allergies        Allergy[]
+  documents        DocumentUpload[]
+  referrals        Referral[]
+  patient_queues   PatientQueue[]
+  vitals           VitalsHistory[]
+
+  @@index([branch_id])
+  @@index([phone])
+  @@index([uhid])
+  @@map("patients")
+}
+
+model FamilyMember {
+  id           String   @id @default(cuid())
+  head_id      String
+  member_id    String
+  relationship String
+  created_at   DateTime @default(now())
+
+  head   Patient @relation("FamilyHead",   fields: [head_id],   references: [id])
+  member Patient @relation("FamilyMember", fields: [member_id], references: [id])
+
+  @@unique([head_id, member_id])
+  @@map("family_members")
+}
+
+model MedicalHistory {
+  id              String    @id @default(cuid())
+  patient_id      String
+  condition_name  String
+  diagnosis_date  DateTime? @db.Date
+  notes           String?
+  is_active       Boolean   @default(true)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  patient Patient @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+
+  @@index([patient_id])
+  @@map("medical_histories")
+}
+
+model Allergy {
+  id          String           @id @default(cuid())
+  patient_id  String
+  allergen    String
+  severity    AllergenSeverity @default(LOW)
+  notes       String?
+  created_at  DateTime         @default(now())
+  updated_at  DateTime         @updatedAt
+
+  patient Patient @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+
+  @@index([patient_id])
+  @@map("allergies")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEPARTMENTS & STAFF
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Department {
+  id             String   @id @default(cuid())
+  branch_id      String
+  name           String
+  description    String?
+  head_doctor_id String?
+  floor          String?
+  extension      String?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  branch       Branch   @relation(fields: [branch_id], references: [id])
+  head_doctor  Doctor?  @relation("DepartmentHead", fields: [head_doctor_id], references: [id])
+  doctors      Doctor[] @relation("DepartmentDoctors")
+  wards        Ward[]
+  appointments Appointment[]
+
+  @@unique([branch_id, name])
+  @@map("departments")
+}
+
+model Doctor {
+  id               String   @id @default(cuid())
+  user_id          String   @unique
+  dept_id          String?
+  specialization   String
+  qualification    String
+  experience_years Int      @default(0)
+  license_no       String   @unique
+  consultation_fee Float    @default(0)
+  is_available     Boolean  @default(true)
+  schedule         Json?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  user         User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  department   Department? @relation("DepartmentDoctors", fields: [dept_id], references: [id])
+  headed_depts Department[] @relation("DepartmentHead")
+
+  appointments     Appointment[]
+  medical_records  MedicalRecord[]
+  lab_orders       LabOrder[]
+  blood_requests   BloodRequest[]
+  emergency_cases  EmergencyCase[]
+  patient_queues   PatientQueue[]
+
+  @@map("doctors")
+}
+
+model Staff {
+  id           String    @id @default(cuid())
+  user_id      String    @unique
+  dept_id      String?
+  shift        String?
+  joining_date DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("staff")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WARDS & BEDS (IPD)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Ward {
+  id             String   @id @default(cuid())
+  branch_id      String
+  dept_id        String?
+  name           String
+  type           WardType @default(GENERAL)
+  floor          String?
+  total_beds     Int      @default(0)
+  available_beds Int      @default(0)
+  charge_per_day Float    @default(0)
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  branch     Branch      @relation(fields: [branch_id], references: [id])
+  department Department? @relation(fields: [dept_id], references: [id])
+  beds       Bed[]
+
+  @@map("wards")
+}
+
+model Bed {
+  id             String    @id @default(cuid())
+  ward_id        String
+  bed_number     String
+  type           String    @default("standard")
+  status         BedStatus @default(AVAILABLE)
+  patient_id     String?
+  admission_id   String?
+  charge_per_day Float     @default(0)
+  features       String[]
+  notes          String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  ward      Ward       @relation(fields: [ward_id], references: [id])
+  admission Admission? @relation(fields: [admission_id], references: [id])
+
+  @@unique([ward_id, bed_number])
+  @@map("beds")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APPOINTMENTS & OPD
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Appointment {
+  id               String            @id @default(cuid())
+  branch_id        String?
+  patient_id       String
+  doctor_id        String
+  dept_id          String?
+  appointment_date DateTime          @db.Date
+  appointment_time String
+  type             AppointmentType   @default(CONSULTATION)
+  status           AppointmentStatus @default(SCHEDULED)
+  chief_complaint  String?
+  notes            String?
+  token_number     Int?
+  cancel_reason    String?
+  source_referral_id String?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  patient        Patient        @relation(fields: [patient_id], references: [id])
+  doctor         Doctor         @relation(fields: [doctor_id], references: [id])
+  department     Department?    @relation(fields: [dept_id], references: [id])
+  medical_record MedicalRecord?
+  patient_queue  PatientQueue?
+  referrals      Referral[]
+  vitals         VitalsHistory[]
+  clinical_notes ClinicalNote[]
+  radiology_reports RadiologyReport[]
+  lab_orders     LabOrder[]
+
+  @@index([patient_id])
+  @@index([doctor_id])
+  @@index([appointment_date])
+  @@index([status])
+  @@map("appointments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATIENT QUEUE (OPD)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model PatientQueue {
+  id                      String        @id @default(cuid())
+  visit_id                String?       @unique
+  patient_id              String
+  doctor_id               String
+  branch_id               String
+  queue_number            Int
+  status                  QueueStatus   @default(WAITING)
+  check_in_time           DateTime      @default(now())
+  consultation_start_time DateTime?
+  consultation_end_time   DateTime?
+  priority                QueuePriority @default(NORMAL)
+  notes                   String?
+  created_at              DateTime      @default(now())
+  updated_at              DateTime      @updatedAt
+
+  appointment Appointment? @relation(fields: [visit_id], references: [id])
+  patient     Patient      @relation(fields: [patient_id], references: [id])
+  doctor      Doctor       @relation(fields: [doctor_id], references: [id])
+  branch      Branch       @relation(fields: [branch_id], references: [id])
+
+  @@index([doctor_id])
+  @@index([branch_id])
+  @@index([status])
+  @@map("patient_queues")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFERRALS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Referral {
+  id                  String          @id @default(cuid())
+  visit_id            String?
+  patient_id          String
+  referring_doctor_id String
+  referral_type       ReferralType    @default(INTERNAL)
+  target_doctor_id    String?
+  target_hospital_name String?
+  reason_for_referral String
+  urgency             ReferralUrgency @default(ROUTINE)
+  status              ReferralStatus  @default(PENDING)
+  notes               String?
+  created_at          DateTime        @default(now())
+  updated_at          DateTime        @updatedAt
+
+  appointment      Appointment? @relation(fields: [visit_id], references: [id])
+  patient          Patient      @relation(fields: [patient_id], references: [id])
+  referring_doctor User         @relation("ReferringDoctor", fields: [referring_doctor_id], references: [id])
+  target_doctor    User?        @relation("TargetDoctor", fields: [target_doctor_id], references: [id])
+  discharge_summary DischargeSummary?
+
+  @@index([patient_id])
+  @@index([referring_doctor_id])
+  @@map("referrals")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLINICAL: Vitals, Notes, EMR
+// ─────────────────────────────────────────────────────────────────────────────
+
+model VitalsHistory {
+  id             String   @id @default(cuid())
+  patient_id     String
+  appointment_id String?
+  admission_id   String?
+  blood_pressure String?
+  heart_rate     Int?
+  temperature    Float?
+  spo2           Float?
+  weight         Float?
+  height         Float?
+  bmi            Float?
+  recorded_at    DateTime @default(now())
+  recorded_by    String?
+
+  patient     Patient      @relation(fields: [patient_id], references: [id])
+  appointment Appointment? @relation(fields: [appointment_id], references: [id])
+  admission   Admission?   @relation(fields: [admission_id], references: [id])
+
+  @@index([patient_id])
+  @@index([appointment_id])
+  @@map("vitals_history")
+}
+
+model ClinicalNote {
+  id              String   @id @default(cuid())
+  appointment_id  String?
+  admission_id    String?
+  patient_id      String?
+  doctor_id       String?
+  complaints      String?
+  diagnosis_notes String?
+  treatment_plan  String?
+  privacy_level   PrivacyLevel @default(NORMAL)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  appointment Appointment? @relation(fields: [appointment_id], references: [id])
+  admission   Admission?   @relation(fields: [admission_id], references: [id])
+
+  @@index([appointment_id])
+  @@index([admission_id])
+  @@map("clinical_notes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEDICAL RECORDS & PRESCRIPTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model MedicalRecord {
+  id                   String   @id @default(cuid())
+  patient_id           String
+  doctor_id            String
+  appointment_id       String?  @unique
+  admission_id         String?
+  visit_date           DateTime
+  chief_complaint      String?
+  history              String?
+  examination_findings String?
+  diagnoses            Json?
+  treatment_plan       String?
+  follow_up_date       DateTime?
+  notes                String?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  patient     Patient      @relation(fields: [patient_id], references: [id])
+  doctor      Doctor       @relation(fields: [doctor_id], references: [id])
+  appointment Appointment? @relation(fields: [appointment_id], references: [id])
+  admission   Admission?   @relation(fields: [admission_id], references: [id])
+
+  prescriptions Prescription[]
+
+  @@index([patient_id])
+  @@map("medical_records")
+}
+
+model Prescription {
+  id                String             @id @default(cuid())
+  patient_id        String
+  doctor_id         String
+  visit_id          String?
+  record_id         String?
+  prescription_date DateTime           @default(now())
+  status            PrescriptionStatus @default(ACTIVE)
+  dispensed_date    DateTime?
+  dispensed_by      String?
+  notes             String?
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+
+  medical_record MedicalRecord?   @relation(fields: [record_id], references: [id])
+  items          PrescriptionItem[]
+
+  @@index([patient_id])
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id              String  @id @default(cuid())
+  prescription_id String
+  inventory_item_id String?
+  medicine_id     String?
+  medicine_name   String
+  dosage          String
+  frequency       String
+  duration        String
+  duration_days   Int?
+  route           String?
+  instructions    String?
+  quantity        Int     @default(1)
+
+  prescription   Prescription  @relation(fields: [prescription_id], references: [id], onDelete: Cascade)
+  medicine       Medicine?     @relation(fields: [medicine_id], references: [id])
+  inventory_item InventoryItem? @relation(fields: [inventory_item_id], references: [id])
+
+  @@map("prescription_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DISCHARGE SUMMARY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DischargeSummary {
+  id                       String               @id @default(cuid())
+  admission_id             String               @unique
+  referral_id              String?              @unique
+  course_in_hospital       String?
+  condition_at_discharge   ConditionAtDischarge @default(STABLE)
+  follow_up_advice         String?
+  final_diagnosis          String?
+  discharge_medications    String?
+  created_at               DateTime             @default(now())
+  updated_at               DateTime             @updatedAt
+
+  admission Admission @relation(fields: [admission_id], references: [id], onDelete: Cascade)
+  referral  Referral? @relation(fields: [referral_id], references: [id])
+
+  @@map("discharge_summaries")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENT UPLOADS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DocumentUpload {
+  id                   String      @id @default(cuid())
+  patient_id           String
+  visit_id             String?
+  admission_id         String?
+  uploaded_by_user_id  String
+  file_url             String
+  file_name            String?
+  file_type            String?
+  file_size            Int?
+  tag                  DocumentTag @default(OTHER)
+  upload_date          DateTime    @default(now())
+
+  patient  Patient @relation(fields: [patient_id], references: [id])
+  uploader User    @relation(fields: [uploaded_by_user_id], references: [id])
+
+  @@index([patient_id])
+  @@map("document_uploads")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LABORATORY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model LabTest {
+  id              String @id @default(cuid())
+  test_name       String
+  test_code       String @unique
+  category        String?
+  base_price      Float  @default(0)
+  reference_range String?
+  description     String?
+  is_active       Boolean @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  parameters  LabParameter[]
+  order_items LabTestItem[]
+
+  @@map("lab_tests")
+}
+
+model LabParameter {
+  id               String  @id @default(cuid())
+  lab_test_id      String?
+  name             String
+  unit             String?
+  normal_range_min String?
+  normal_range_max String?
+  description      String?
+
+  lab_test    LabTest?    @relation(fields: [lab_test_id], references: [id])
+  lab_results LabResult[]
+
+  @@map("lab_parameters")
+}
+
+model LabOrder {
+  id            String           @id @default(cuid())
+  patient_id    String
+  doctor_id     String
+  branch_id     String?
+  appointment_id String?
+  visit_id      String?
+  order_date    DateTime         @default(now())
+  priority      LabOrderPriority @default(ROUTINE)
+  status        LabOrderStatus   @default(ORDERED)
+  notes         String?
+  collected_at  DateTime?
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+
+  patient     Patient       @relation(fields: [patient_id], references: [id])
+  doctor      Doctor        @relation(fields: [doctor_id], references: [id])
+  appointment Appointment?  @relation(fields: [appointment_id], references: [id])
+  tests       LabTestItem[]
+  results     LabResult[]
+
+  @@index([patient_id])
+  @@map("lab_orders")
+}
+
+model LabTestItem {
+  id            String  @id @default(cuid())
+  order_id      String
+  lab_test_id   String?
+  test_code     String
+  test_name     String
+  category      String?
+  price         Float   @default(0)
+
+  order    LabOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  lab_test LabTest? @relation(fields: [lab_test_id], references: [id])
+
+  @@map("lab_test_items")
+}
+
+model LabResult {
+  id                String   @id @default(cuid())
+  order_id          String
+  lab_parameter_id  String?
+  test_name         String
+  result_value      String?
+  unit              String?
+  reference_range   String?
+  is_abnormal       Boolean  @default(false)
+  notes             String?
+  reported_at       DateTime @default(now())
+  reported_by       String?
+
+  order         LabOrder      @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  lab_parameter LabParameter? @relation(fields: [lab_parameter_id], references: [id])
+
+  @@map("lab_results")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RADIOLOGY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model RadiologyReport {
+  id             String            @id @default(cuid())
+  patient_id     String?
+  appointment_id String?
+  admission_id   String?
+  ordered_by     String?
+  branch_id      String?
+  modality       RadiologyModality @default(XRAY)
+  body_part      String?
+  clinical_info  String?
+  findings       String?
+  impression     String?
+  image_url      String?
+  report_date    DateTime          @default(now())
+  reported_by    String?
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+
+  appointment Appointment? @relation(fields: [appointment_id], references: [id])
+  admission   Admission?   @relation(fields: [admission_id], references: [id])
+
+  @@index([appointment_id])
+  @@map("radiology_reports")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IPD: ADMISSIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Admission {
+  id                 String          @id @default(cuid())
+  patient_id         String
+  doctor_id          String?
+  ward_id            String?
+  bed_id             String?
+  admit_date         DateTime        @default(now())
+  discharge_date     DateTime?
+  expected_discharge DateTime?
+  admission_type     AdmissionType   @default(ELECTIVE)
+  primary_diagnosis  String?
+  status             AdmissionStatus @default(ADMITTED)
+  diet_type          String?
+  notes              String?
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+
+  patient          Patient           @relation(fields: [patient_id], references: [id])
+  beds             Bed[]
+  medical_records  MedicalRecord[]
+  bill             Bill?
+  discharge_summary DischargeSummary?
+  vitals           VitalsHistory[]
+  clinical_notes   ClinicalNote[]
+  radiology_reports RadiologyReport[]
+
+  @@index([patient_id])
+  @@index([status])
+  @@map("admissions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHARMACY & INVENTORY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model InventoryItem {
+  id                  String   @id @default(cuid())
+  branch_id           String?
+  item_name           String
+  item_type           ItemType @default(MEDICINE)
+  low_stock_threshold Int      @default(10)
+  description         String?
+  is_active           Boolean  @default(true)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  batches            ItemBatch[]
+  prescription_items PrescriptionItem[]
+
+  @@map("inventory_items")
+}
+
+model ItemBatch {
+  id               String    @id @default(cuid())
+  item_id          String
+  batch_number     String
+  expiry_date      DateTime?
+  mrp              Float     @default(0)
+  cost_price       Float     @default(0)
+  current_quantity Int       @default(0)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  inventory_item InventoryItem @relation(fields: [item_id], references: [id], onDelete: Cascade)
+
+  @@unique([item_id, batch_number])
+  @@map("item_batches")
+}
+
+model Medicine {
+  id             String    @id @default(cuid())
+  branch_id      String
+  name           String
+  generic_name   String?
+  brand          String?
+  category       String?
+  dosage_form    String?
+  strength       String?
+  unit           String?
+  stock_quantity Int       @default(0)
+  reorder_level  Int       @default(10)
+  purchase_price Float     @default(0)
+  selling_price  Float     @default(0)
+  expiry_date    DateTime?
+  batch_number   String?
+  location       String?
+  manufacturer   String?
+  is_active      Boolean   @default(true)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  branch             Branch             @relation(fields: [branch_id], references: [id])
+  prescription_items PrescriptionItem[]
+
+  @@index([branch_id])
+  @@index([name])
+  @@map("medicines")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BILLING & PAYMENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Bill {
+  id              String     @id @default(cuid())
+  bill_number     String     @unique
+  patient_id      String
+  admission_id    String?    @unique
+  appointment_id  String?
+  branch_id       String?
+  generated_by    String?
+  bill_date       DateTime   @default(now())
+  due_date        DateTime?
+  subtotal        Float      @default(0)
+  discount        Float      @default(0)
+  tax             Float      @default(0)
+  total           Float      @default(0)
+  paid_amount     Float      @default(0)
+  balance         Float      @default(0)
+  status          BillStatus @default(PENDING)
+  insurance_id    String?
+  insurance_claim Json?
+  notes           String?
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+
+  patient          Patient          @relation(fields: [patient_id], references: [id])
+  admission        Admission?       @relation(fields: [admission_id], references: [id])
+  items            BillItem[]
+  payments         Payment[]
+  insurance_claims InsuranceClaim[]
+  refunds          Refund[]
+
+  @@index([patient_id])
+  @@index([status])
+  @@map("bills")
+}
+
+model BillItem {
+  id             String @id @default(cuid())
+  bill_id        String
+  category       String
+  description    String
+  quantity       Int    @default(1)
+  unit_price     Float
+  discount       Float  @default(0)
+  amount         Float
+  reference_type String?
+  reference_id   String?
+
+  bill Bill @relation(fields: [bill_id], references: [id], onDelete: Cascade)
+
+  @@map("bill_items")
+}
+
+model Payment {
+  id                      String        @id @default(cuid())
+  bill_id                 String
+  patient_id              String
+  amount                  Float
+  method                  PaymentMethod @default(CASH)
+  payment_status          PaymentStatus @default(SUCCESS)
+  payment_date            DateTime      @default(now())
+  reference_number        String?
+  gateway_transaction_id  String?
+  received_by             String?
+  gateway_response        Json?
+  notes                   String?
+  created_at              DateTime      @default(now())
+  updated_at              DateTime      @updatedAt
+
+  bill     Bill      @relation(fields: [bill_id], references: [id])
+  refunds  Refund[]
+  gateway_logs PaymentGatewayLog[]
+
+  @@index([bill_id])
+  @@map("payments")
+}
+
+model Refund {
+  id                String       @id @default(cuid())
+  payment_id        String
+  bill_id           String
+  refund_amount     Float
+  gateway_refund_id String?
+  reason            String?
+  status            RefundStatus @default(INITIATED)
+  created_at        DateTime     @default(now())
+  updated_at        DateTime     @updatedAt
+
+  payment Payment @relation(fields: [payment_id], references: [id])
+  bill    Bill    @relation(fields: [bill_id], references: [id])
+
+  @@index([payment_id])
+  @@map("refunds")
+}
+
+model PaymentGatewayLog {
+  id         String   @id @default(cuid())
+  payment_id String?
+  event_type String
+  payload    Json
+  timestamp  DateTime @default(now())
+
+  payment Payment? @relation(fields: [payment_id], references: [id])
+
+  @@map("payment_gateway_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INSURANCE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model InsuranceProvider {
+  id              String   @id @default(cuid())
+  name            String
+  contact_details Json?
+  address         String?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  claims InsuranceClaim[]
+
+  @@map("insurance_providers")
+}
+
+model InsuranceClaim {
+  id               String               @id @default(cuid())
+  bill_id          String
+  provider_id      String
+  policy_number    String
+  amount_claimed   Float                @default(0)
+  amount_approved  Float?
+  claim_status     InsuranceClaimStatus @default(PENDING)
+  submission_date  DateTime             @default(now())
+  approval_date    DateTime?
+  notes            String?
+  created_at       DateTime             @default(now())
+  updated_at       DateTime             @updatedAt
+
+  bill     Bill              @relation(fields: [bill_id], references: [id])
+  provider InsuranceProvider @relation(fields: [provider_id], references: [id])
+
+  @@index([bill_id])
+  @@map("insurance_claims")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMERGENCY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EmergencyCase {
+  id                 String          @id @default(cuid())
+  branch_id          String?
+  patient_id         String?
+  patient_name       String
+  age                Int?
+  gender             Gender?
+  triage_level       TriageLevel     @default(URGENT)
+  chief_complaint    String
+  arrival_time       DateTime        @default(now())
+  arrival_mode       ArrivalMode     @default(WALK_IN)
+  assigned_doctor_id String?
+  vitals             Json?
+  status             EmergencyStatus @default(WAITING)
+  disposition_notes  String?
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+
+  patient         Patient? @relation(fields: [patient_id], references: [id])
+  assigned_doctor Doctor?  @relation(fields: [assigned_doctor_id], references: [id])
+
+  @@index([status])
+  @@index([triage_level])
+  @@map("emergency_cases")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLOOD BANK
+// ─────────────────────────────────────────────────────────────────────────────
+
+model BloodInventory {
+  id              String     @id @default(cuid())
+  branch_id       String
+  blood_group     BloodGroup
+  units_available Int        @default(0)
+  reserved_units  Int        @default(0)
+  updated_at      DateTime   @updatedAt
+
+  branch Branch @relation(fields: [branch_id], references: [id])
+
+  @@unique([branch_id, blood_group])
+  @@map("blood_inventory")
+}
+
+model BloodDonation {
+  id            String     @id @default(cuid())
+  branch_id     String?
+  donor_name    String
+  donor_phone   String
+  blood_group   BloodGroup
+  units         Float      @default(1)
+  donation_date DateTime   @default(now())
+  expiry_date   DateTime?
+  status        String     @default("available")
+  notes         String?
+  created_at    DateTime   @default(now())
+
+  @@index([blood_group])
+  @@map("blood_donations")
+}
+
+model BloodRequest {
+  id             String               @id @default(cuid())
+  branch_id      String?
+  patient_id     String?
+  doctor_id      String?
+  blood_group    BloodGroup
+  units_required Float
+  units_issued   Float?
+  priority       BloodRequestPriority @default(ROUTINE)
+  status         BloodRequestStatus   @default(PENDING)
+  request_date   DateTime             @default(now())
+  approved_date  DateTime?
+  issued_date    DateTime?
+  notes          String?
+
+  patient Patient? @relation(fields: [patient_id], references: [id])
+  doctor  Doctor?  @relation(fields: [doctor_id], references: [id])
+
+  @@map("blood_requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AMBULANCE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Ambulance {
+  id             String          @id @default(cuid())
+  branch_id      String
+  vehicle_number String          @unique
+  type           String          @default("BLS")
+  status         AmbulanceStatus @default(AVAILABLE)
+  driver_name    String?
+  driver_phone   String?
+  last_location  Json?
+  notes          String?
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+
+  branch Branch @relation(fields: [branch_id], references: [id])
+
+  @@map("ambulances")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id         String    @id @default(cuid())
+  user_id    String?
+  patient_id String?
+  branch_id  String?
+  type       String
+  title      String
+  message    String
+  data       Json?
+  is_read    Boolean   @default(false)
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+
+  user    User?    @relation(fields: [user_id], references: [id])
+  patient Patient? @relation(fields: [patient_id], references: [id])
+
+  @@index([user_id])
+  @@index([patient_id])
+  @@index([is_read])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS & SUBSCRIPTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+model HospitalSettings {
+  id                   String   @id @default(cuid())
+  hospital_id          String   @unique
+  branding             Json?
+  modules_enabled      Json?
+  regional             Json?
+  notifications_config Json?
+  b2c_config           Json?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  hospital Hospital @relation(fields: [hospital_id], references: [id], onDelete: Cascade)
+
+  @@map("hospital_settings")
+}
+
+model Subscription {
+  id               String           @id @default(cuid())
+  hospital_id      String           @unique
+  plan             SubscriptionPlan @default(BASIC)
+  billing_cycle    BillingCycle     @default(MONTHLY)
+  user_limit       Int              @default(10)
+  patient_limit    Int              @default(1000)
+  starts_at        DateTime         @default(now())
+  expires_at       DateTime?
+  is_active        Boolean          @default(true)
+  razorpay_sub_id  String?
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+
+  hospital Hospital @relation(fields: [hospital_id], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  branch_id   String?
+  user_id     String?
+  action      String
+  resource    String
+  resource_id String?
+  changes     Json?
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime @default(now())
+
+  branch Branch? @relation(fields: [branch_id], references: [id])
+  user   User?   @relation(fields: [user_id], references: [id])
+
+  @@index([branch_id])
+  @@index([user_id])
+  @@index([resource])
+  @@index([created_at])
+  @@map("audit_logs")
+}
