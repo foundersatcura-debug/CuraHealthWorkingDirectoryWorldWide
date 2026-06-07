@@ -66,6 +66,9 @@ export const SOCKET_EVENTS = {
   LAB_RESULT_READY: 'lab:result_ready',
   // Ambulance events
   AMBULANCE_LOCATION: 'ambulance:location',
+  // Superadmin dashboard events
+  DASHBOARD_STATS_UPDATE: 'dashboard:stats_update',
+  DASHBOARD_PRIORITY_ALERT: 'dashboard:priority_alert',
 } as const;
 
 // Appointment status transitions — enforced server-side

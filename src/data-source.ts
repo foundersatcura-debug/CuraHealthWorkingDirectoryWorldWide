@@ -17,7 +17,7 @@ export const AppDataSource = new DataSource({
   port: parseInt(process.env.DB_PORT ?? '5432'),
   username: process.env.DB_USER ?? 'postgres',
   password: process.env.DB_PASS ?? '',
-  database: process.env.DB_NAME ?? 'cura_hms',
+  database: process.env.DB_NAME ?? 'qura_hms',
   synchronize: process.env.NODE_ENV === 'development', // NEVER true in production
   logging: process.env.NODE_ENV === 'development',
   entities: [

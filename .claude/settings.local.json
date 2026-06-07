@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(find \"C:\\\\\\\\Users\\\\\\\\Sam5431\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\Cura-Healthcare\\\\\\\\frontend\" -type f \\\\\\( -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.json\" -o -name \"*.vue\" \\\\\\))"
     ]
   }
 }

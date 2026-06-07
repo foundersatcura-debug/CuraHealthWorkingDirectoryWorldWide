@@ -44,6 +44,12 @@ export function initSocket(httpServer: HttpServer): SocketIOServer {
       void socket.join(`branch:${user.branch_id}`);
     }
 
+    // Founder / SuperAdmin auto-join the superadmin dashboard room
+    if (user?.role === 'FOUNDER' || user?.role === 'SUPER_ADMIN') {
+      void socket.join('superadmin:dashboard');
+      logger.debug(`Socket ${socket.id} joined superadmin:dashboard`);
+    }
+
     // Patient joins their personal room
     socket.on('join:patient', (patientId: string) => {
       void socket.join(`patient:${patientId}`);
@@ -90,10 +96,22 @@ export const emit = {
 
   emergencyNew(branchId: string, data: unknown): void {
     getIO().to(`emergency:${branchId}`).emit(SOCKET_EVENTS.EMERGENCY_NEW, data);
+    // Push lightweight alert to superadmin dashboard
+    getIO().to('superadmin:dashboard').emit(SOCKET_EVENTS.DASHBOARD_PRIORITY_ALERT, {
+      type: 'EMERGENCY_NEW',
+      branch_id: branchId,
+      payload: data,
+      ts: new Date().toISOString(),
+    });
   },
 
   emergencyUpdate(branchId: string, data: unknown): void {
     getIO().to(`emergency:${branchId}`).emit(SOCKET_EVENTS.EMERGENCY_UPDATE, data);
+    getIO().to('superadmin:dashboard').emit(SOCKET_EVENTS.DASHBOARD_STATS_UPDATE, {
+      trigger: 'emergency_update',
+      branch_id: branchId,
+      ts: new Date().toISOString(),
+    });
   },
 
   notifyUser(userId: string, data: unknown): void {
@@ -110,5 +128,26 @@ export const emit = {
 
   bedStatusChanged(branchId: string, data: unknown): void {
     getIO().to(`branch:${branchId}`).emit(SOCKET_EVENTS.BED_STATUS_CHANGED, data);
+    getIO().to('superadmin:dashboard').emit(SOCKET_EVENTS.DASHBOARD_STATS_UPDATE, {
+      trigger: 'bed_status_changed',
+      branch_id: branchId,
+      ts: new Date().toISOString(),
+    });
+  },
+
+  // Superadmin-specific emitters
+  dashboardStatsUpdate(trigger: string, data?: unknown): void {
+    getIO().to('superadmin:dashboard').emit(SOCKET_EVENTS.DASHBOARD_STATS_UPDATE, {
+      trigger,
+      payload: data,
+      ts: new Date().toISOString(),
+    });
+  },
+
+  dashboardPriorityAlert(alert: { type: string; severity: string; message: string; data?: unknown }): void {
+    getIO().to('superadmin:dashboard').emit(SOCKET_EVENTS.DASHBOARD_PRIORITY_ALERT, {
+      ...alert,
+      ts: new Date().toISOString(),
+    });
   },
 };

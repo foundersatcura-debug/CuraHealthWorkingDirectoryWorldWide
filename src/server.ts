@@ -20,7 +20,7 @@ async function start(): Promise<void> {
     logger.info('✅  Redis connected');
 
     httpServer.listen(env.PORT, () => {
-      logger.info(`🚀  Cura Healthcare API running on http://localhost:${env.PORT}`);
+      logger.info(`🚀  Qura Healthcare API running on http://localhost:${env.PORT}`);
       logger.info(`📡  API prefix: ${env.API_PREFIX}`);
       logger.info(`🌍  Environment: ${env.NODE_ENV}`);
     });

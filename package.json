@@ -1,7 +1,7 @@
 {
-  "name": "cura-healthcare-backend",
+  "name": "qura-healthcare-backend",
   "version": "1.0.0",
-  "description": "Scalable backend API for Cura Healthcare Management System",
+  "description": "Scalable backend API for Qura Healthcare Management System",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
