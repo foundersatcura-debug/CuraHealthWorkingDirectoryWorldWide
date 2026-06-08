@@ -18,7 +18,7 @@ export async function listWards(req: Request, res: Response): Promise<void> {
 
 export async function createWard(req: Request, res: Response): Promise<void> {
   const user = (req as AuthenticatedRequest).user;
-  const ward = await prisma.ward.create({ data: { branch_id: user.branch_id!, ...req.body as object } });
+  const ward = await prisma.ward.create({ data: { branch_id: user.branch_id!, ...req.body } });
   sendCreated(res, ward);
 }
 
@@ -57,7 +57,7 @@ export async function listBeds(req: Request, res: Response): Promise<void> {
 }
 
 export async function createBed(req: Request, res: Response): Promise<void> {
-  const bed = await prisma.bed.create({ data: req.body as object });
+  const bed = await prisma.bed.create({ data: req.body });
   sendCreated(res, bed);
 }
 

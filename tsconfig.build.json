@@ -1,4 +1,18 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "prisma"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "prisma",
+    "src/routes/index.ts",
+    "src/middleware/rbac.middleware.ts",
+    "src/data-source.ts",
+    "src/entities",
+    "src/controllers/admin.controller.ts",
+    "src/controllers/nurse.controller.ts",
+    "src/controllers/reception.controller.ts",
+    "src/websocket/queueSocket.ts"
+  ]
 }

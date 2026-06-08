@@ -42,7 +42,7 @@ export async function createMedicine(req: Request, res: Response): Promise<void>
   const med = await prisma.medicine.create({
     data: {
       branch_id: user.branch_id!,
-      ...(req.body as object),
+      ...req.body,
       expiry_date: (req.body as Record<string, string>).expiry_date ? new Date((req.body as Record<string, string>).expiry_date) : undefined,
     },
   });

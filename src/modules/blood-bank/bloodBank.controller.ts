@@ -76,7 +76,7 @@ export async function listRequests(req: Request, res: Response): Promise<void> {
 export async function createRequest(req: Request, res: Response): Promise<void> {
   const user = (req as AuthenticatedRequest).user;
   const request = await prisma.bloodRequest.create({
-    data: { branch_id: user.branch_id, ...(req.body as object) },
+    data: { branch_id: user.branch_id, ...req.body },
   });
   sendCreated(res, request);
 }

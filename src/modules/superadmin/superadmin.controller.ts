@@ -84,7 +84,7 @@ export async function listBranches(req: Request, res: Response): Promise<void> {
 
 export async function createBranch(req: Request, res: Response): Promise<void> {
   const branch = await prisma.branch.create({
-    data: { hospital_id: req.params.id, ...(req.body as object) },
+    data: { hospital_id: req.params.id, ...req.body },
   });
   sendCreated(res, branch);
 }

@@ -57,7 +57,7 @@ export async function create(req: Request, res: Response): Promise<void> {
   const record = await prisma.medicalRecord.create({
     data: {
       doctor_id: user.id,
-      ...(req.body as object),
+      ...req.body,
       visit_date: new Date(),
     },
   });
@@ -155,7 +155,7 @@ export async function getPatientHistory(req: Request, res: Response): Promise<vo
 export async function addMedicalHistory(req: Request, res: Response): Promise<void> {
   const { patient_id } = req.params;
   const item = await prisma.medicalHistory.create({
-    data: { patient_id, ...req.body as object },
+    data: { patient_id, ...req.body },
   });
   sendCreated(res, item);
 }
@@ -171,7 +171,7 @@ export async function updateMedicalHistory(req: Request, res: Response): Promise
 export async function addAllergy(req: Request, res: Response): Promise<void> {
   const { patient_id } = req.params;
   const allergy = await prisma.allergy.create({
-    data: { patient_id, ...req.body as object },
+    data: { patient_id, ...req.body },
   });
   sendCreated(res, allergy);
 }

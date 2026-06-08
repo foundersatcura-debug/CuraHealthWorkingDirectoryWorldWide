@@ -5,7 +5,6 @@ interface ApiMeta {
   limit?: number;
   total?: number;
   total_pages?: number;
-  [key: string]: unknown;
 }
 
 export function sendSuccess<T>(res: Response, data: T, meta?: ApiMeta, statusCode = 200): void {

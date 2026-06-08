@@ -45,7 +45,7 @@ export async function create(req: Request, res: Response): Promise<void> {
   const ec = await prisma.emergencyCase.create({
     data: {
       branch_id: user.branch_id,
-      ...(req.body as object),
+      ...req.body,
     },
     include: { assigned_doctor: { include: { user: true } } },
   });

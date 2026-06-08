@@ -124,13 +124,11 @@ export async function patientStats(req: Request, res: Response): Promise<void> {
       where: { branch_id: user.branch_id ?? '' },
       _count: true,
     }),
-    prisma.patient.groupMany
-      ? prisma.patient.groupBy({
-          by: ['registered_at'],
-          where: { branch_id: user.branch_id ?? '', registered_at: { gte: subDays(today, 30) } },
-          _count: true,
-        })
-      : Promise.resolve([]),
+    prisma.patient.groupBy({
+      by: ['registered_at'],
+      where: { branch_id: user.branch_id ?? '', registered_at: { gte: subDays(today, 30) } },
+      _count: true,
+    }),
   ]);
 
   sendSuccess(res, { by_gender: byGender, by_blood_group: byBloodGroup });

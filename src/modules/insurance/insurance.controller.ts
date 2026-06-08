@@ -30,7 +30,7 @@ export async function getProvider(req: Request, res: Response): Promise<void> {
 }
 
 export async function createProvider(req: Request, res: Response): Promise<void> {
-  const provider = await prisma.insuranceProvider.create({ data: req.body as object });
+  const provider = await prisma.insuranceProvider.create({ data: req.body });
   sendCreated(res, provider);
 }
 

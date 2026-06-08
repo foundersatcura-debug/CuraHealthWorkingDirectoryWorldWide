@@ -32,7 +32,7 @@ export async function getOne(req: Request, res: Response): Promise<void> {
 export async function create(req: Request, res: Response): Promise<void> {
   const user = (req as AuthenticatedRequest).user;
   const dept = await prisma.department.create({
-    data: { branch_id: user.branch_id!, ...req.body as object },
+    data: { branch_id: user.branch_id!, ...req.body },
   });
   sendCreated(res, dept);
 }

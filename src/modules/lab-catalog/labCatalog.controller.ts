@@ -105,7 +105,7 @@ export async function listParameters(req: Request, res: Response): Promise<void>
 }
 
 export async function createParameter(req: Request, res: Response): Promise<void> {
-  const param = await prisma.labParameter.create({ data: req.body as object });
+  const param = await prisma.labParameter.create({ data: req.body });
   sendCreated(res, param);
 }
 

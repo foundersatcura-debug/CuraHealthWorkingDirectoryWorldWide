@@ -52,7 +52,7 @@ export async function getItem(req: Request, res: Response): Promise<void> {
 export async function createItem(req: Request, res: Response): Promise<void> {
   const user = (req as AuthenticatedRequest).user;
   const item = await prisma.inventoryItem.create({
-    data: { branch_id: user.branch_id, ...(req.body as object) },
+    data: { branch_id: user.branch_id, ...req.body },
   });
   sendCreated(res, item);
 }
