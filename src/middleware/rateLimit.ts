@@ -14,7 +14,7 @@ export const globalRateLimit = rateLimit({
 });
 
 export const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 60, // 15 minutes
   max: env.AUTH_RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
@@ -24,7 +24,7 @@ export const authRateLimit = rateLimit({
 });
 
 export const strictRateLimit = rateLimit({
-  windowMs: 60 * 1000,
+  windowMs: 60 * 1000, // 1 minute
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
